@@ -1,0 +1,190 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <Windows.h>
+#include <conio.h>
+#include <thread>
+#include <mutex>
+
+using namespace std;
+
+mutex mute;
+
+void setCursorPosition(int x, int y)
+{
+	static const HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	cout.flush();
+	COORD coord = { (SHORT)x, (SHORT)y };
+	SetConsoleCursorPosition(hOut, coord);
+}
+
+void algorithm(string filename, int SPOT)
+{
+	char current_symbol[100], new_symbol[100], direction[100];
+	string current_state[100], new_state[100];
+	int position, index = 0;
+	bool halt = false;
+	bool rules = false;
+	string tape;
+	string current_rule_state = "0";
+	int steps = 0;
+
+	ifstream input(filename);
+
+	input >> position;
+	input >> tape;
+
+	while (!input.eof())
+	{
+		input >> current_state[index] >> current_symbol[index] >> new_symbol[index] >> direction[index] >> new_state[index];
+		index++;
+	}
+
+	while (halt == false)
+	{
+		rules = false;
+
+		if (_kbhit())
+		{
+			break;
+		}
+
+		mute.lock();
+		setCursorPosition(0, (SPOT * 5) + 2);
+
+		HANDLE statec = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(statec, 6);
+		cout << "DABARTINE BUSENA: " << current_rule_state << " " << "ZINGSNIAI:  " << steps << " " << endl << endl;
+
+		HANDLE tapec = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(tapec, 15);
+		cout << tape << endl;
+
+		HANDLE cc = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(cc, 6);
+
+		for (int i = 0; i < tape.length(); i++)
+		{
+			if (i == (position - 1))
+			{
+				cout << "^";
+			}
+			else cout << " ";
+		}
+
+		HANDLE tapec2 = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(tapec2, 6);
+		mute.unlock();
+		Sleep(30);
+		steps++;
+
+		for (int i = 0; i < index; i++)
+		{
+			if (current_state[i] == current_rule_state && current_symbol[i] == tape[position - 1])
+			{
+				rules = true;
+				tape[position - 1] = new_symbol[i];
+				if (direction[i] == 'R')
+				{
+					position++;
+				}
+				else if (direction[i] == 'L')
+				{
+					position--;
+				}
+				current_rule_state = new_state[i];
+				if (position == 0 || position > (tape.length()))
+				{
+					halt = true;
+				}
+			}		
+		}
+		if (rules == false)
+		{
+			halt = true;
+		}
+	}
+
+	mute.lock();
+	setCursorPosition(0, (SPOT * 5) + 2);
+	cout << filename << " TIURINGO MASINOS VEIKIMAS BAIGTAS! " << endl << endl;
+	cout << "GALUTINIS REZULTATAS: " << tape << endl;
+	mute.unlock();
+}
+
+int main()
+{
+	string filename[20];
+	int filenumber;
+	int se;
+
+	HANDLE startc = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(startc, 6);
+	cout << endl << endl << endl << "                   START - 1" << endl;
+	cout << "                   EXIT - 2" << endl;
+	cout << "                       ";
+	cin >> se;
+	system("cls");
+
+	while(se != 1 && se != 2)
+	{
+		cout << endl << endl << endl << "                   PADARETE KLAIDA!" << endl;
+		cout << "                  IVESKITE DAR KARTA" << endl;
+		cout << "                       START - 1" << endl;
+		cout << "                       EXIT - 2" << endl;
+		cin >> se;
+		system("cls");
+	}
+
+	while (se == 1) {
+		HANDLE hmc = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(hmc, 6);
+		cout << endl << endl << endl << "                   KIEK TURINGO MASINU NORITE VYKDYTI?: " << endl;
+		cout << "                       ";
+
+		cin >> filenumber;
+
+		for (int i = 0; i < filenumber; i++)
+		{
+			HANDLE inc = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(inc, 6);
+			cout << "                   PRASOME IVESTI " << i + 1 << " TEKSTINIO FAILO PAVADINIMA: " << endl;
+			cout << "                       ";
+			cin >> filename[i];
+			cout << endl;
+		}
+
+		system("cls");
+
+		HANDLE stopc = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(stopc, 6);
+		cout  << "                   NOREDAMI SUSTABDYTI MASINAS SPAUSKITE BET KURI MYGTUKA " << endl;
+
+
+
+
+		thread th[15];
+		for (int i = 0; i < filenumber; i++)
+		{
+			th[i] = thread(algorithm, filename[i], i);
+		}
+		for (int i = 0; i < filenumber; i++)
+		{
+			th[i].join();
+		}
+
+
+		setCursorPosition(0, filenumber * 5);
+		cout << endl << "AR NORITE TESTI DARBA?" << endl;
+		cout << "       TAIP - 1" << endl;
+		cout << "       NE - 2" << endl;
+		cin >> se;
+		system("cls");
+	}
+
+
+	if (se == 2) {
+		cout << endl << endl << endl << "                  GEROS DIENOS!" << endl << endl << endl;
+		return 0;
+	}
+}
